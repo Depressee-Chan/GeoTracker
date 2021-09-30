@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tracker</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> 
+    <script src='https://cdn.plot.ly/plotly-2.4.2.min.js'></script>
+	  <script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js'></script>
+  </head>
+  <body class="bg-dark">
+
+    <div class="container-fluid mt-3">
+      <div class="row">
+        <div class="col p-3 bg-dark text-white"><center><h5>Coordinates</h5></center><br><br><br><br><br>
+          <p id="coords" style="overflow-y: scroll; height: 500px"></p>
+          <form name="myform" action="{{ url_for('index') }}" method="POST">
+            <input type="hidden" value="#" name="uuid">
+            <input type="hidden" value="#" name="time">
+            <input type="hidden" value="#" name="coordinates">
+            <button type="button" style="opacity: 0.0;" id="button"></button>
+          </form>
+        </div>
+        <div class="col p-3 bg-dark text-white">
+          <center><h2>Map</h2><br><br><br><br><br>
+            <div id='myDiv'>you don't need a map, just plug things into google maps</div>
+          </center>
+          
+        </div>
+        <div class="col p-3 bg-dark text-white">
+          <center>
+            <h5>Share with a friend!</h5><br><br><br>
+            <img src="images/default.png" alt="Your QR Code will be shown here..." style="margin-top: 25%;"  class="code"><br>
+          </center>
+        </div>
+      </div>
+    </div>
+
+  </body>
+  <script>
+    $(function(){
+      $('button').click(function(){
+        $.ajax({
+          url: 'append',
+          data: $('form').serialize(),
+          type: 'POST',
+          success: function(response){
+            console.log(response);
+          },
+          error: function(error){
+            console.log(error);
+          }
+        })
+      })
+    })
+  </script>
+  <script>
+    var x = document.getElementById("coords");
+    var code = document.querySelector('.code');
+    var toast = document.querySelector('#toast');
+    var Button = document.getElementById("button");
+
+    function submitform()
+    {
+      Button.click();
+    }
+
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showPosition);
+        } else { 
+            x.innerHTML = "Location could not be found";
+        }
+
+    }
+
+    function showPosition(position) {
+      var a = position.coords.latitude + ',' + position.coords.longitude;
+      var d = new Date();
+      var n = d.toLocaleTimeString();
+  
+      x.innerHTML += a + " ---------- " + n + '<br>';
+      document.myform.coordinates.value = a;
+      document.myform.time.value = n;
+    }
+
+    function generate() {
+      let pubKey = getCookie("username");
+      //CHANGE THE DATA PATHWAY BELOW THIS LINE TO THE IP ADDRESS OR DOMAIN OF THE SERVER RUNNING IT
+      var data = "http://192.168.0.16:80/v/" + pubKey;             
+      var url = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${data}`;
+      code.src = url;
+      document.myform.uuid.value = pubKey;
+    }
+  
+    window.onload = function(){
+      setTimeout(checkCookie, 50);
+      setTimeout(generate, 70);
+      setInterval(getLocation, 30000);
+      setInterval(submitform, 90000);
+    };
+
+  function setCookie(cname,cvalue,exdays) {
+    const d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    let expires = "expires=" + d.toGMTString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+  }
+  
+  function getCookie(cname) {
+    let name = cname + "=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+  
+  function checkCookie() {
+    let user = getCookie("username");
+    if (user != "") {
+      return 200;
+    } else {
+       user = makeid(20);
+       if (user != "" && user != null) {
+         setCookie("username", user, 900);
+       }
+    }
+  }
+
+
+  function makeid(length) {
+    var result           = '';
+    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for ( var i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+  }
+  </script>
+</html>
